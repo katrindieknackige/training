@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimierter Halbmarathon Planer 2:10h</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FAFAF9; /* stone-50 */
+            color: #44403C; /* stone-700 */
+        }
+
+        /* Custom Scrollbar for Timeline */
+        .timeline-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+        .timeline-scroll::-webkit-scrollbar-track {
+            background: #E7E5E4; /* stone-200 */
+            border-radius: 4px;
+        }
+        .timeline-scroll::-webkit-scrollbar-thumb {
+            background: #A8A29E; /* stone-400 */
+            border-radius: 4px;
+        }
+        .timeline-scroll::-webkit-scrollbar-thumb:hover {
+            background: #78716C; /* stone-500 */
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 300px;
+            margin: 0 auto;
+        }
+        
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        .phase-indicator.active {
+            border-bottom: 3px solid #0D9488; /* teal-600 */
+            color: #0F766E; /* teal-700 */
+            font-weight: 700;
+        }
+        
+        .abc-item {
+            position: relative;
+            padding-left: 1.5rem;
+        }
+        .abc-item::before {
+            content: attr(data-index);
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #0D9488; /* teal-600 */
+            line-height: 1.5rem;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 min-h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="bg-white border-b border-stone-200 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-stone-800 tracking-tight">🏃‍♀️ Katrins Halbmarathon-Trainingsplan</h1>
+                <p class="text-sm text-stone-500">Gut geplant ist halb gelaufen</p>
+            </div>
+            <div class="hidden md:flex gap-6 text-sm font-medium text-stone-600">
+                <!-- Buttons, die scrollToSection nutzen, MÜSSEN zu einer existierenden ID springen -->
+                <button onclick="scrollToSection('schedule')" class="hover:text-teal-600 transition">Trainingsplan</button>
+                <button onclick="scrollToSection('exercise-guide-container')" class="hover:text-teal-600 transition">Übungsanleitung</button>
+                <button onclick="scrollToSection('running-drills')" class="hover:text-teal-600 transition">Lauf-ABC</button>
+                <button onclick="scrollToSection('analytics')" class="hover:text-teal-600 transition">Analyse</button>
+                <button onclick="scrollToSection('health')" class="hover:text-teal-600 transition">Gesundheit & Core</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow w-full max-w-6xl mx-auto px-4 py-8 space-y-12">
+
+        <!-- Intro / Overview Cards -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-xl card-shadow border-l-4 border-teal-500">
+                <h3 class="text-stone-500 text-sm font-semibold uppercase tracking-wider mb-2">Zielzeit</h3>
+                <div class="flex items-baseline">
+                    <span class="text-4xl font-bold text-stone-800">2:10</span>
+                    <span class="text-lg text-stone-500 ml-1">h</span>
+                </div>
+                <p class="text-sm text-stone-400 mt-2">Pace: ~6:09 min/km</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl card-shadow border-l-4 border-orange-400">
+                <h3 class="text-stone-500 text-sm font-semibold uppercase tracking-wider mb-2">Fokus</h3>
+                <div class="text-xl font-bold text-stone-800">Stabilität & Prävention</div>
+                <p class="text-sm text-stone-400 mt-2">Knie (Hüfte) & LW1 (Core)</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl card-shadow border-l-4 border-indigo-400">
+                <h3 class="text-stone-500 text-sm font-semibold uppercase tracking-wider mb-2">Balance</h3>
+                <div class="text-xl font-bold text-stone-800">Laufen + Passion</div>
+                <p class="text-sm text-stone-400 mt-2">Handstand & Bouldern integriert</p>
+            </div>
+        </section>
+
+        <!-- Interactive Schedule Section -->
+        <section id="schedule" class="scroll-mt-24">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-stone-800">Dein Trainingsplan</h2>
+                <p class="text-stone-600 mt-2">Wähle eine Woche aus, um die detaillierten Einheiten zu sehen. Der Plan ist in zwei Hauptphasen unterteilt: Basis & Volumenaufbau, gefolgt von Spezifik & Tapering. Hier findest du nun alle Kraftübungen direkt aufgeschlüsselt.</p>
+            </div>
+
+            <!-- Timeline Navigator -->
+            <div class="bg-white rounded-xl card-shadow p-4 mb-8">
+                <div class="flex justify-between items-center mb-4 border-b border-stone-100 pb-2">
+                    <span class="text-xs font-bold uppercase text-stone-400">Phase 1: Basis & Technik</span>
+                    <span class="text-xs font-bold uppercase text-stone-400">Phase 2: Spezifik & Taper</span>
+                </div>
+                <div class="timeline-scroll flex gap-3 overflow-x-auto pb-4 snap-x">
+                    <!-- JS will populate buttons here -->
+                </div>
+            </div>
+
+            <!-- Active Week Detail View -->
+            <div id="week-detail-container" class="bg-white rounded-xl card-shadow overflow-hidden transition-all duration-300">
+                <!-- Content injected via JS -->
+            </div>
+        </section>
+        
+        <!-- Exercise Guide Section -->
+        <section id="exercise-guide-container" class="scroll-mt-24 pt-8">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-stone-800">🛠️ Anleitung: Kraftübungen (Woche <span id="guide-week-number">1</span>)</h2>
+                <p class="text-stone-600 mt-2">Hier findest du eine kurze, anfängerfreundliche Beschreibung zu jeder Kraftübung, die in der ausgewählten Woche auf deinem Plan steht. **Technik geht immer vor Gewicht!**</p>
+            </div>
+
+            <div id="exercise-guide-cards" class="grid grid-cols-1 md:grid-cols-2 gap-6 transition-opacity duration-300">
+                <!-- Exercise details injected here -->
+            </div>
+        </section>
+        
+        <!-- NEW: Running Drills (Lauf-ABC) Section -->
+        <section id="running-drills" class="scroll-mt-24 pt-8">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-stone-800">🚀 Lauf-ABC: Der Koordinationsturbo</h2>
+                <p class="text-stone-600 mt-2">Das Lauf-ABC verbessert deine Ökonomie, Schrittfrequenz und Technik. Absolviere es **1-2x pro Woche** (ideal vor den Intervallen/Tempoläufen) auf einer Strecke von ca. 20-30m.</p>
+            </div>
+
+            <!-- Top 10 Drills -->
+            <div class="bg-white p-6 rounded-xl card-shadow mb-8 border-l-4 border-teal-500">
+                <h3 class="text-xl font-bold text-stone-800 mb-4 flex items-center gap-2">
+                    <span class="text-2xl">🔟</span> Die 10 wichtigsten Lauf-ABC-Übungen
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    <!-- 1. Anfersen -->
+                    <div class="abc-item" data-index="1.">
+                        <h4 class="font-semibold text-stone-700 mb-1">Anfersen (Butt Kicks)</h4>
+                        <p class="text-xs text-stone-500 mb-2">Aktiviert Beinbeuger, verbessert Fußrückführung.</p>
+                        <ul class="list-disc list-inside text-sm text-stone-600 space-y-0.5 ml-2">
+                            <li><strong>Ausführung:</strong> Ferse zieht aktiv Richtung Gesäß. Kleiner Schritt, hoher Rhythmus.</li>
+                            <li><strong>Cues:</strong> Hüfte stabil halten. Knie bleibt leicht vorne.</li>
+                            <li><strong>Fehler:</strong> Zu große Schritte, Hohlkreuz.</li>
+                        </ul>
+                        <div class="mt-2 text-center"></div>
+                    </div>
+                    <!-- 2. Kniehebelauf -->
+                    <div class="abc-item" data-index="2.">
+                        <h4 class="font-semibold text-stone-700 mb-1">Kniehebelauf (High Knees)</h4>
+                        <p class="text-xs text-stone-500 mb-2">Trainiert Hüftbeuger, Core, Laufschrittkoordination.</p>
+                        <ul class="list-disc list-inside text-sm text-stone-600 space-y-0.5 ml-2">
+                            <li><strong>Ausführung:</strong> Knie bis Hüfthöhe. Arme aktiv im Laufrhythmus.</li>
+                            <li><strong>Cues:</strong> Aufrecht, Rippen "runter". Fuß setzt unter Körperschwerpunkt auf.</li>
+                            <li><strong>Fehler:</strong> Nach hinten lehnen, Knie zu hoch (→ Hohlkreuz).</li>
+                        </ul>
+                        <div class="mt-2 text-center"></div>
+                    </div>
+                    <!-- 3. Skippings -->
+                    <div class="abc-item" data-index="3.">
+                        <h4 class="font-semibold text-stone-700 mb-1">Skippings (Mini-Kniehebelauf)</h4>
+                        <p class="text-xs text-stone-500 mb-2">Fördert Schrittfrequenz und Reaktivkraft.</p>
+                        <ul class="list-disc list-inside text-sm text-stone-600 space-y-0.5 ml-2">
+                            <li><strong>Ausführung:</strong> Winzige Schritte mit hoher Frequenz (150–170/min).</li>
+                            <li><strong>Cues:</strong> Spannung im Core. Schneller Fußwechsel.</li>
+                            <li><strong>Fehler:</strong> Schlurfen, Füße zu lange am Boden.</li>
+                        </ul>
+                    </div>
+                    <!-- 4. Fußgelenksarbeit -->
+                    <div class="abc-item" data-index="4.">
+                        <h4 class="font-semibold text-stone-700 mb-1">Fußgelenksarbeit</h4>
+                        <p class="text-xs text-stone-500 mb-2">Kürzere Bodenkontaktzeit, Stiffness in Achilles/Wade.</p>
+                        <ul class="list-disc list-inside text-sm text-stone-600 space-y-0.5 ml-2">
+                            <li><strong>Ausführung:</strong> Kleine Sprünge nur aus dem Fußgelenk. Knie fast gestreckt.</li>
+                            <li><strong>Cues:</strong> Ferse kurz in der Luft. Körperspannung.</li>
+                            <li><strong>Fehler:</strong> Nach vorne kippen, "stampfen".</li>
+                        </ul>
+                    </div>
+                    <!-- 5. Hopserlauf -->
+                    <div class="abc-item" data-index="5.">
+                        <h4 class="font-semibold text-stone-700 mb-1">Hopserlauf (leicht, körperschonend)</h4>
+                        <p class="text-xs text-stone-500 mb-2">Aufbau von Kraft, Hüftextension und Abdruck.</p>
+                        <ul class="list-disc list-inside text-sm text-stone-600 space-y-0.5 ml-2">
+                            <li><strong>Ausführung:</strong> Langer Schritt, federnd. Arme aktiv. **KEINE hohen Sprünge.**</li>
+                            <li><strong>Cues:</strong> Weich landen. Hüfte streckt sich nach vorne.</li>
+                            <li><strong>Fehler:</strong> Zu hart oder zu hoch springen, Hohlkreuz.</li>
+                        </ul>
+                    </div>
+                    <!-- 6. Überkreuzlauf -->
+                    <div class="abc-item" data-index="6.">
+                        <h4 class="font-semibold text-stone-700 mb-1">Überkreuzlauf (Grapevine)</h4>
+                        <p class="text-xs text-stone-500 mb-2">Fördert Hüftmobilität und Koordination.</p>
+                        <ul class="list-disc list-inside text-sm text-stone-600 space-y-0.5 ml-2">
+                            <li><strong>Ausführung:</strong> Seitlich laufen, ein Bein vor das andere setzen. Rhythmus konstant halten.</li>
+                            <li><strong>Cues:</strong> Brust zeigt nach vorne (nicht verdrehen!). Hüfte stabil.</li>
+                            <li><strong>Fehler:</strong> Zu schnell, Oberkörper verdreht sich.</li>
+                        </ul>
+                    </div>
+                    <!-- 7. Seitgalopp -->
+                    <div class="abc-item" data-index="7.">
+                        <h4 class="font-semibold text-stone-700 mb-1">Seitgalopp (Side Shuffle)</h4>
+                        <p class="text-xs text-stone-500 mb-2">Stärkt Gluteus Medius, Abduktoren (wichtig für Knie!).</p>
+                        <ul class="list-disc list-inside text-sm text-stone-600 space-y-0.5 ml-2">
+                            <li><strong>Ausführung:</strong> Halbe Squat-Position. Seitlich schieben, nicht hüpfen.</li>
+                            <li><strong>Cues:</strong> Knie leicht nach außen. Hüfte ruhig halten.</li>
+                            <li><strong>Fehler:</strong> Knie kollabiert nach innen (Valgus), Oberkörper zu tief.</li>
+                        </ul>
+                    </div>
+                    <!-- 8. Rückwärtslauf -->
+                    <div class="abc-item" data-index="8.">
+                        <h4 class="font-semibold text-stone-700 mb-1">Rückwärtslauf (Locker Trab)</h4>
+                        <p class="text-xs text-stone-500 mb-2">Gut für Kniegesundheit, exzentrische Quadrizeps-Kraft.</p>
+                        <ul class="list-disc list-inside text-sm text-stone-600 space-y-0.5 ml-2">
+                            <li><strong>Ausführung:</strong> Ganz locker rückwärts traben. Kleine Schritte.</li>
+                            <li><strong>Cues:</strong> Blick über Schulter. Knie nicht durchstrecken.</li>
+                            <li><strong>Fehler:</strong> Zu große Schritte (Stolpergefahr), Hohlkreuz.</li>
+                        </ul>
+                    </div>
+                    <!-- 9. Sprunglauf -->
+                    <div class="abc-item" data-index="9.">
+                        <h4 class="font-semibold text-stone-700 mb-1">Sprunglauf (gleitend, reduziert)</h4>
+                        <p class="text-xs text-stone-500 mb-2">Erhöht Abdruckkraft ohne vertikalen Stress.</p>
+                        <ul class="list-disc list-inside text-sm text-stone-600 space-y-0.5 ml-2">
+                            <li><strong>Ausführung:</strong> Langer Schritt. Gleitende, weiche Landung.</li>
+                            <li><strong>Cues:</strong> Hüfte vorne halten. Knie stabil.</li>
+                            <li><strong>Fehler:</strong> Zu viel vertikal (hohe Sprünge), lautes Landen.</li>
+                        </ul>
+                    </div>
+                    <!-- 10. Steigerungsläufe -->
+                    <div class="abc-item" data-index="10.">
+                        <h4 class="font-semibold text-stone-700 mb-1">Steigerungsläufe (Strides)</h4>
+                        <p class="text-xs text-stone-500 mb-2">Verbessert Schrittlänge, Frequenz und Lockerheit.</p>
+                        <ul class="list-disc list-inside text-sm text-stone-600 space-y-0.5 ml-2">
+                            <li><strong>Ausführung:</strong> 60–100 m oder 15–20 s. Steigern bis max. 85 % Tempo, dann locker auslaufen.</li>
+                            <li><strong>Cues:</strong> Schultern entspannt. Füße "schnell leicht".</li>
+                            <li><strong>Fehler:</strong> Sprinten (zu hart), Schultern hochziehen.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Variants -->
+            <div class="bg-white p-6 rounded-xl card-shadow mb-8">
+                <h3 class="text-xl font-bold text-stone-800 mb-4 flex items-center gap-2">
+                    <span class="text-2xl">📋</span> Dein Komplettes Lauf-ABC: Varianten
+                </h3>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                        <h4 class="font-bold text-lg text-teal-600 mb-2">⭐ Variante A (10 Minuten)</h4>
+                        <p class="text-sm text-stone-600 mb-3">**Kurz & knackig** - ideal vor Tempoläufen oder wenn wenig Zeit ist.</p>
+                        <ul class="text-sm text-stone-700 space-y-1">
+                            <li>20 m Fußgelenksarbeit</li>
+                            <li>20 m Skippings</li>
+                            <li>20 m Kniehebelauf</li>
+                            <li>20 m Anfersen</li>
+                            <li>20 m Seitgalopp (rechts + links)</li>
+                            <li>20 m Überkreuzlauf</li>
+                            <li>2× Steigerungsläufe à 15 s</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                        <h4 class="font-bold text-lg text-teal-600 mb-2">⭐⭐ Variante B (15 Minuten)</h4>
+                        <p class="text-sm text-stone-600 mb-3">**Standard-Routine** - perfekt für die Dienstags-Intervall-Tage.</p>
+                        <ul class="text-sm text-stone-700 space-y-1">
+                            <li>25 m Fußgelenksarbeit</li>
+                            <li>25 m Skippings</li>
+                            <li>25 m Kniehebelauf</li>
+                            <li>25 m Anfersen</li>
+                            <li>25 m Hopserlauf (leicht)</li>
+                            <li>25 m Überkreuzlauf</li>
+                            <li>25 m Seitgalopp (rechts + links)</li>
+                            <li>3× Steigerungsläufe à 15–20 s</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                        <h4 class="font-bold text-lg text-teal-600 mb-2">⭐⭐⭐ Variante C (20 Minuten)</h4>
+                        <p class="text-sm text-stone-600 mb-3">**Intensiv-Training** - für maximales Ökonomietraining.</p>
+                        <ul class="text-sm text-stone-700 space-y-1">
+                            <li>2× 20 m Fußgelenksarbeit</li>
+                            <li>2× 20 m Skippings</li>
+                            <li>2× 20 m Kniehebelauf</li>
+                            <li>2× 20 m Anfersen</li>
+                            <li>2× 20 m Hopserlauf (leicht)</li>
+                            <li>20 m Rückwärtslauf</li>
+                            <li>20 m Überkreuzlauf</li>
+                            <li>20 m Seitgalopp (je Seite)</li>
+                            <li>4× Steigerungsläufe à 20 s</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Safety & Integration -->
+            <div class="bg-red-50 p-6 rounded-xl card-shadow border-l-4 border-red-500">
+                <h3 class="text-xl font-bold text-red-800 mb-3 flex items-center gap-2">
+                    <span class="text-2xl">🚨</span> Sicherheitshinweise (Knie & Gleitwirbel)
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-stone-700">
+                    <div>
+                        <p class="font-semibold text-stone-800 mb-2">Wie oft?</p>
+                        <ul class="list-disc list-inside space-y-1 ml-2">
+                            <li>**1× pro Woche (Dienstag):** Pflicht vor der Tempo-Einheit.</li>
+                            <li>**2× pro Woche (Di. + So.):** Ideal zur Optimierung.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-stone-800 mb-2">Sichere Ausführung für dich:</p>
+                        <ul class="list-disc list-inside space-y-1 ml-2">
+                            <li>**Core-Spannung:** IMMER halten, um ein Hohlkreuz zu vermeiden (LW1-Schutz).</li>
+                            <li>**Hopserlauf:** Nur gleitend, keine explosiven Sprünge! (Knie/Rücken-Schutz).</li>
+                            <li>**Fußaufsatz:** Achte bei Kniehebelauf/Skippings auf das Landen unter dem Körperschwerpunkt.</li>
+                            <li>**Seitgalopp:** Super wichtig! Stärkt Gluteus Medius (Knie-Achse).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- END NEW RUNNING DRILLS SECTION -->
+
+        <!-- Analytics Section -->
+        <section id="analytics" class="scroll-mt-24 pt-8">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-stone-800">Trainingsanalyse</h2>
+                <p class="text-stone-600 mt-2">Verstehe die Struktur deines Trainings. Wir bauen das Volumen langsam auf, um Verletzungen zu vermeiden, und nutzen spezifische Paces für den Wettkampferfolg.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Long Run Chart -->
+                <div class="bg-white p-6 rounded-xl card-shadow">
+                    <h3 class="text-lg font-bold text-stone-800 mb-4">Progression: Langer Lauf (So)</h3>
+                    <div class="chart-container">
+                        <canvas id="longRunChart"></canvas>
+                    </div>
+                    <p class="text-xs text-stone-400 mt-4 text-center">Ziel: Sicherer Aufbau bis 20km (Woche 12), dann Tapering.</p>
+                </div>
+
+                <!-- Pace Zones Chart -->
+                <div class="bg-white p-6 rounded-xl card-shadow">
+                    <h3 class="text-lg font-bold text-stone-800 mb-4">Deine Pace Zonen</h3>
+                    <div class="chart-container">
+                        <canvas id="paceChart"></canvas>
+                    </div>
+                    <p class="text-xs text-stone-400 mt-4 text-center">Wichtig: Der Großteil des Trainings (Langer Lauf) findet langsam statt!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Health & Prevention Hub -->
+        <section id="health" class="scroll-mt-24 pt-8 bg-stone-100 p-8 rounded-2xl border border-stone-200">
+            <div class="mb-8 text-center max-w-2xl mx-auto">
+                <h2 class="text-2xl font-bold text-stone-800">🛡️ Verletzungsprävention & Körper</h2>
+                <p class="text-stone-600 mt-2">Aufgrund deiner Historie (Gleitwirbel LW1, Knieschmerzen) sind diese Regeln nicht verhandelbar. Integriere sie in jede Routine.</p>
+            </div>
+
+            <!-- Changed to lg:grid-cols-4 to accommodate the new card -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Knee Safety -->
+                <div class="bg-white p-6 rounded-xl card-shadow border-t-4 border-teal-500">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="text-2xl">🦵</span>
+                        <h3 class="font-bold text-stone-800">Knie-Schutz</h3>
+                    </div>
+                    <p class="text-sm text-stone-600 mb-4">Ursache für Schmerzen ab km 7 ist oft eine instabile Hüfte.</p>
+                    <ul class="text-sm space-y-2 text-stone-700">
+                        <li class="flex items-start gap-2">
+                            <span class="text-teal-500 font-bold">✓</span>
+                            <span><strong>Gluteus Medius:</strong> Immer Clamshells oder Lateral Band Walks ins Warm-up.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-teal-500 font-bold">✓</span>
+                            <span><strong>3 Sätze:</strong> Konsequent vor/nach dem Studio-Training.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Back Safety -->
+                <div class="bg-white p-6 rounded-xl card-shadow border-t-4 border-orange-500">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="text-2xl">🦴</span>
+                        <h3 class="font-bold text-stone-800">Rücken (LW1)</h3>
+                    </div>
+                    <p class="text-sm text-stone-600 mb-4">Stabilität statt Bewegung in der Lendenwirbelsäule.</p>
+                    <ul class="text-sm space-y-2 text-stone-700">
+                        <li class="flex items-start gap-2">
+                            <span class="text-orange-500 font-bold">!</span>
+                            <span><strong>Kein Hohlkreuz:</strong> Vermeide Überstreckung bei Overhead-Übungen.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-teal-500 font-bold">✓</span>
+                            <span><strong>Anti-Rotation:</strong> Pallof Press ist dein bester Freund.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-teal-500 font-bold">✓</span>
+                            <span><strong>Anti-Extension:</strong> Dead Bugs & Planks.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Training Logic -->
+                <div class="bg-white p-6 rounded-xl card-shadow border-t-4 border-indigo-500">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="text-2xl">⚖️</span>
+                        <h3 class="font-bold text-stone-800">Balance & Technik</h3>
+                    </div>
+                    <p class="text-sm text-stone-600 mb-4">Technik vor Gewicht, besonders bei Freihanteln.</p>
+                    <ul class="text-sm space-y-2 text-stone-700">
+                        <li class="flex items-start gap-2">
+                            <span class="text-teal-500 font-bold">✓</span>
+                            <span><strong>Start leicht:</strong> Squats/Deadlifts erst nur mit Körpergewicht/Stange.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-teal-500 font-bold">✓</span>
+                            <span><strong>4. Einheit:</strong> Ist flexibel! Bouldern ersetzt das Home-Workout.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- NEW: Handstand Mini-Plan -->
+                <div class="bg-white p-6 rounded-xl card-shadow border-t-4 border-purple-500">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="text-2xl">🤸</span>
+                        <h3 class="font-bold text-stone-800">Dein Handstand-Miniplan</h3>
+                    </div>
+                    <p class="text-sm text-stone-600 mb-4">2–4 Min pro Tag, komplett optional. Fokus auf Hohlkreuz-Vermeidung.</p>
+                    <ul class="text-sm space-y-2 text-stone-700">
+                        <li class="flex items-start gap-2">
+                            <span class="text-purple-500 font-bold">1.</span>
+                            <span><strong>Wandhandstand (30s):</strong> Bauch zur Wand (weniger Hohlkreuz), 20–30 s.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-purple-500 font-bold">2.</span>
+                            <span><strong>Kick-Ups:</strong> 3–5 kontrollierte Versuche zum Finden des Gleichgewichts.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-purple-500 font-bold">3.</span>
+                            <span><strong>Tuck-Hold:</strong> 10–15 s im Hocke- oder Tuck-Handstand halten.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-purple-500 font-bold">4.</span>
+                            <span><strong>Line Drills:</strong> 2–3 Sätze: Rippen runter, Spannung (Hohlkreuz-Korrektur).</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t border-stone-200 mt-12 py-8">
+        <div class="max-w-6xl mx-auto px-4 text-center text-stone-400 text-sm">
+            <p>© 2025 Personalisierter Halbmarathon Planer. Bleib gesund und hab Spaß!</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- DATA STORAGE ---
+        // Data derived directly from the "trainingsplan.md" source report. Detailed strength exercises added to 'studio' field.
+        const weeksData = [
+            // Phase 1: Basis
+            { id: 1, dist: 10, phase: 'Basis', ll: '10 km @ 7:00–7:30/km', studio: 'IV: 6×2 min @ 5:35/km. Pause: 2 min Gehen/Trab. Kraft: Goblet Squat 3×12, Hip Thrust 3×12, Ruderzug 3×12, Clamshells 3×15.', runYoga: '5 km locker + 20 min Hüftöffner', opt: 'Handstand: Wrist Warm-up + 3×20s Wall Hold', note: 'Start sanft. Fokus auf saubere Ausführung.' },
+            { id: 2, dist: 11, phase: 'Basis', ll: '11 km @ 7:00–7:30/km', studio: 'IV: 4×4 min @ 5:40/km. Pause: 2 min Trab. Kraft: Step-Ups 3×10, Hamstring Curl 3×12 (Maschine), Pallof Press 3×12, Lateral Band Walks 3×12.', runYoga: '6 km locker + 20 min Yoga', opt: 'BOULDERN (leicht)', note: 'Erste Steigerung der Intervalldauer.' },
+            // RDL (sehr leicht) 3×12 ersetzt durch Kabelzug-Hip-Hinge 3×12 (sehr leicht)
+            { id: 3, dist: 12, phase: 'Basis', ll: '12 km @ 7:00–7:20/km', studio: 'IV: 3×5 min @ 5:45/km. Pause: 2 min Trab. Kraft: Leg Press 3×12, Kabelzug-Hip-Hinge 3×12 (sehr leicht), Latzug 3×12, Side Plank 3×30 s/Seite.', runYoga: '6 km locker + 25 min Yoga', opt: 'Core Zuhause: Dead Bug, Bird Dog', note: 'Kein Bouldern diese Woche, dafür Core zu Hause.' },
+            { id: 4, dist: 13, phase: 'Basis', ll: '13 km @ 6:55–7:15/km', studio: 'TDL: 3×5 min @ 6:15/km (HMP-Tempo). 1 min Trabpause. Kraft: Box Squats 3×10, Kabelzug Core 3×12, Clamshells 3×15.', runYoga: '6 km locker + 25 min Yoga', opt: 'BOULDERN (moderat)', note: 'Erster Tempo-Dauerlauf (TDL) im Zieltempo.' },
+            // Phase 2: Volumen
+            { id: 5, dist: 14, phase: 'Volumen', ll: '14 km @ 6:55–7:15/km', studio: 'IV: 3×8 min @ 6:00/km (Schwellen-IV). Pause: 3 min Trab. Kraft: Split Squats 3×12, Hip Thrust 3×10 (schwer), Anti-Rotation 3×12.', runYoga: '7 km locker + 25 min Yoga', opt: 'Handstand: 3× Wall Walks + Kick-Ups', note: 'Längere Intervalle an der Schwelle.' },
+            // RDL (leicht) 3×10 ersetzt durch Kabelzug-Hip-Hinge 3×10 (leicht)
+            { id: 6, dist: 11, phase: 'Volumen', ll: '11 km (Entlastung) @ 7:00/km', studio: 'TDL: 15 min @ 6:10/km (HMP). 5 min Trab. 10 min @ 6:10/km. Kraft: Kabelzug-Hip-Hinge 3×10 (leicht), Ruderzug 3×12, Lateral Band Walks 3×12.', runYoga: '6 km locker + 20 min Mobility', opt: 'BOULDERN (Technik)', note: 'Entlastungswoche. Kraft tanken.' },
+            { id: 7, dist: 15, phase: 'Volumen', ll: '15 km @ 6:50–7:10/km', studio: 'IV: 5×4 min @ 5:40/km (mit leichtem Anstieg auf Laufband). 2 min Trabpause. Kraft: Leg Press 3×10, Hamstrings 3×15, Plank Walkouts 3×6.', runYoga: '7 km locker + 30 min Yoga', opt: 'Core Zuhause: Hollow Rocks, Side Plank', note: 'Wir knacken die 15km Marke.' },
+            { id: 8, dist: 16, phase: 'Volumen', ll: '16 km @ 6:50–7:10/km', studio: 'IV: 5×5 min 30 s @ 5:45/km. Pause: 3 min Trab. Kraft: Hip Thrust 4×8, Latzug 3×12, Clamshells 3×15.', runYoga: '7 km locker + 30 min Yoga', opt: 'BOULDERN (moderat/schwierig)', note: '50% des Trainings ist geschafft!' },
+            // Phase 3: Spezifik
+            { id: 9, dist: 17, phase: 'Spezifik', ll: '17 km @ 6:45–7:05/km', studio: 'TDL: 2×10 min @ 6:10/km (HMP). 5 min Trabpause. Kraft: Bulgarian Split Squats 3×10 (nur KG!), Rudern 3×12, Pallof Press 3×12.', runYoga: '8 km locker + 30 min Yoga', opt: 'Handstand: 3×30s Wall Hold, Freistand', note: 'Fokus auf Halbmarathon-Pace (HMP).' },
+            { id: 10, dist: 18, phase: 'Spezifik', ll: '18 km @ 6:45–7:05/km', studio: 'IV: 6×4 min @ 5:40/km. Pause: 2 min Trab. Kraft: Hip Thrust 4×8, Latzug 3×12, Lateral Band Walks 3×12.', runYoga: '7 km locker + 25 min Yoga', opt: 'BOULDERN (moderat)', note: 'Höchstes Volumen nähert sich.' },
+            { id: 11, dist: 16, phase: 'Spezifik', ll: '16 km (Entlastung) @ 6:50/km', studio: 'Schwellenlauf: 20 min @ 6:00/km. Kraft (Reduziert): Glute Bridge 2×15, Planke 2×60 s.', runYoga: '7 km locker + 25 min Yoga', opt: 'Core Zuhause: Mobility + Hollow Hold', note: 'Kurze Entlastung vor dem Peak.' },
+            // RDL (moderat) 3×8 (Technik!) ersetzt durch Kabelzug-Hip-Hinge 3×8 (moderat, Fokus Glute)
+            { id: 12, dist: 20, phase: 'Peak', ll: '19–20 km (PEAK) @ 6:40–7:00/km', studio: 'IV: 4×8 min @ 6:15/km (HMP). Pause: 3 min Trab. Kraft: Kabelzug-Hip-Hinge 3×8 (moderat, Fokus Glute), Latzug 3×12, Side Plank 3×45 s.', runYoga: '8 km locker + 30 min Yoga', opt: 'BOULDERN (leicht)', note: 'PEAK WEEK! Der längste Lauf des Plans. Mental wichtig.' },
+            // Phase 4: Taper
+            { id: 13, dist: 14, phase: 'Taper', ll: '14 km @ 6:45/km', studio: 'TDL: 10 min @ 6:10/km. 5 min Trab. 5 min schneller (5:50/km). Kraft (Erhaltung): Hip Thrust 2×10, Rudern 2×10.', runYoga: '6 km locker + 20 min Yoga', opt: '15 Min Mobility (Kein Handstand)', note: 'Tapering beginnt. Umfang reduzieren.' },
+            { id: 14, dist: 10, phase: 'Taper', ll: '10 km @ 7:00/km', studio: 'IV: 4×2 min @ 5:35/km. Pause: 2 min Gehen. Kraft (Minimalsatz): Glute Bridge 2×10, Planke 2×45 s.', runYoga: '5 km locker + 15 min Yoga', opt: 'RUHETAG / leichte Mobility', note: 'Beine frisch machen.' },
+            { id: 15, dist: 5, phase: 'Taper', ll: '5 km locker', studio: 'Mini-Einheit: 3 km locker, 4 Steigerungen à 20 s.', runYoga: '3 km locker + 10 min Yoga', opt: 'RUHETAG', note: 'Ruhe ist jetzt das wichtigste Training.' },
+            { id: 16, dist: 21.1, phase: 'Race', ll: '🏁 HALBMARATHON (Ziel 2:10h)', studio: 'DO: Mini-Lauf: 3 km locker, 2 Steigerungen.', runYoga: 'DI: Mini-Yoga: 10 min Core & Hüfte.', opt: 'SO: RACE DAY', note: 'Viel Erfolg! Du bist bereit.' }
+        ];
+
+        // --- MASTER EXERCISE DETAILS ---
+        const exerciseDetails = {
+            'Goblet Squat': {
+                icon: '🏋️',
+                focus: 'Vordere Oberschenkel, Gesäß, Core',
+                description: 'Halte eine Kurzhantel senkrecht vor der Brust. Stelle die Füße schulterbreit. Gehe tief in die Hocke, während du den Rücken gerade hältst und die Ellbogen zwischen die Knie bringst. Knie zeigen leicht nach außen. Sehr gut für die Technik.',
+                imageTag: '[Bild von Goblet Squat]',
+                isPreventive: false,
+                videoUrl: 'https://www.youtube.com/watch?v=M5B9vT9-J1k'
+            },
+            'Hip Thrust': {
+                icon: '🍑',
+                focus: 'Gesäßmuskulatur (Gluteus Maximus)',
+                description: 'Lehne den oberen Rücken an eine Bank, Füße stehen flach auf dem Boden. Hebe die Hüfte, bis dein Körper von den Schultern bis zu den Knien eine gerade Linie bildet. Drücke die Gesäßmuskeln am höchsten Punkt fest zusammen. Die wichtigste Übung für Läufer.',
+                imageTag: '[Bild von Hip Thrust]',
+                isPreventive: true,
+                videoUrl: 'https://www.youtube.com/watch?v=F0f-N3O8jH4'
+            },
+            'Ruderzug': {
+                icon: '🚣',
+                focus: 'Oberer Rücken, Latissimus, Bizeps',
+                description: 'Setze dich an die Rudermaschine (Kabelzug). Ziehe den Griff zum Bauch, indem du die Schulterblätter zusammenziehst. Lass die Arme nur als "Haken" wirken. Halte den Oberkörper stabil (kein Schwung!).',
+                imageTag: '[Bild von Kabelrudern]',
+                isPreventive: false,
+                videoUrl: 'https://www.youtube.com/watch?v=vVjV-7z2uGk'
+            },
+            'Clamshells': {
+                icon: '🐚',
+                focus: 'Gesäßmuskulatur (Gluteus Medius), Hüftstabilität',
+                description: 'Lege dich auf die Seite, Knie angewinkelt, Füße zusammen. Halte die Füße zusammen und öffne nur das obere Knie wie eine Muschel. Halte die Bewegung langsam und kontrolliert. Essentiell für Knie-Prävention.',
+                imageTag: '[Bild von Clamshell Übung]',
+                isPreventive: true,
+                videoUrl: 'https://www.youtube.com/watch?v=03i9-D_5xX8'
+            },
+            'Step-Ups': {
+                icon: '🪜',
+                focus: 'Gesäß, Oberschenkel, Einbein-Stabilität',
+                description: 'Stell dich vor eine stabile Box/Bank. Steige mit einem Fuß auf, drücke dich durch die Ferse des Standbeins nach oben. Das Bein auf der Box leistet die Hauptarbeit. Langsam und kontrolliert absteigen.',
+                imageTag: '[Bild von Hantel Step Ups]',
+                isPreventive: false,
+                videoUrl: 'https://www.youtube.com/watch?v=T_8N_w19i2U'
+            },
+            'Hamstring Curl': {
+                icon: '🦵',
+                focus: 'Hinterer Oberschenkel (Beinbeuger)',
+                description: 'In der Maschine: Lege dich auf den Bauch oder setze dich. Beuge die Knie und ziehe die Fersen in Richtung Gesäß. Führe die Bewegung kontrolliert aus, um Krämpfe zu vermeiden. Wichtig für die Laufökonomie.',
+                imageTag: '[Bild von Hamstring Curl Maschine]',
+                isPreventive: false,
+                videoUrl: 'https://www.youtube.com/watch?v=kYJv9v52-c0'
+            },
+            'Pallof Press': {
+                icon: '🛡️',
+                focus: 'Anti-Rotation (Core-Stabilität)',
+                description: 'Stehe seitlich zu einem Kabelzug oder Widerstandsband. Ziehe den Griff zur Brust und drücke ihn dann langsam geradeaus. Der Körper darf sich dabei nicht zur Seite drehen (Anti-Rotation!). Perfekt für den LW1-Schutz.',
+                imageTag: '[Bild von Pallof Press]',
+                isPreventive: true,
+                videoUrl: 'https://www.youtube.com/watch?v=kP_u2510_8E'
+            },
+            'Lateral Band Walks': {
+                icon: '🦀',
+                focus: 'Gluteus Medius, Hüftabduktoren',
+                description: 'Platziere ein Miniband um die Knie oder Knöchel. Gehe in eine leichte Hocke. Mache kleine, seitliche Schritte. Achte darauf, dass die Knie nicht nach innen fallen. Hält die Knie-Achse stabil.',
+                imageTag: '[Bild von Lateral Band Walks]',
+                isPreventive: true,
+                videoUrl: 'https://www.youtube.com/watch?v=Xh5hQv6w3-o'
+            },
+            'Leg Press': {
+                icon: '🦿',
+                focus: 'Vordere Oberschenkel (Quadrizeps), Gesäß',
+                description: 'Setz dich in die Beinpresse. Füße schulterbreit mittig platzieren. Drücke das Gewicht weg, bis die Beine fast gestreckt sind (Knie nicht durchdrücken!). Lasse das Gewicht langsam wieder ab. Gute Ergänzung zu freien Kniebeugen.',
+                imageTag: '[Bild von Beinpresse]',
+                isPreventive: false,
+                videoUrl: 'https://www.youtube.com/watch?v=P11m5p0pYwY'
+            },
+            'Kabelzug-Hip-Hinge': {
+                icon: '🔗',
+                focus: 'Gesäßmuskulatur, Hamstrings (Hüftstreckung)',
+                description: 'Stelle dich mit dem Rücken zum Kabelzug (tiefster Punkt), befestige ein Seil. Gehe in eine leichte Kniebeuge und lasse die Hüfte nach hinten klappen (Hinge). Halte den Rücken kerzengerade! Bringe die Hüfte explosiv nach vorne und spanne das Gesäß am Ende maximal an. **Dies ist eine extrem sichere Alternative zum Kreuzheben ohne Belastung auf die Wirbelsäule.**',
+                imageTag: '[Bild von Kabelzug Hip Hinge]',
+                isPreventive: true,
+                videoUrl: 'https://www.youtube.com/watch?v=S8L3k0zT95w'
+            },
+            'Latzug': {
+                icon: '⛰️',
+                focus: 'Latissimus (breiter Rückenmuskel), Bizeps',
+                description: 'Setze dich an die Latzugmaschine. Greife die Stange etwas breiter als schulterbreit. Ziehe die Stange zur oberen Brust, indem du die Schulterblätter nach unten und hinten ziehst. Lass die Arme nur als "Haken" wirken. Nicht mit dem Oberkörper schwingen.',
+                imageTag: '[Bild von Latzug Übung]',
+                isPreventive: false,
+                videoUrl: 'https://www.youtube.com/watch?v=yYyK9GvQd1U'
+            },
+            'Side Plank': {
+                icon: '↔️',
+                focus: 'Seitliche Bauchmuskeln, Core-Stabilität',
+                description: 'Stütze dich auf einem Unterarm und der Außenseite eines Fußes ab. Hebe die Hüfte, bis der Körper eine gerade Linie bildet. Halte diese Position. Essentiell für Anti-Seitenbeugung und LW1-Schutz.',
+                imageTag: '[Bild von Seitstütz]',
+                isPreventive: true,
+                videoUrl: 'https://www.youtube.com/watch?v=k_lR7jH0gQY'
+            },
+            'Box Squats': {
+                icon: '🪑',
+                focus: 'Gesäß, Oberschenkel, Tiefenkontrolle',
+                description: 'Eine Kniebeuge mit einer Box/Bank als Ziel. Hocke dich langsam ab, bis du die Box kurz berührst, und drücke dich dann wieder nach oben. Hilft, die Tiefe zu kontrollieren und die Hüfte aktiv einzusetzen.',
+                imageTag: '[Bild von Box Squat]',
+                isPreventive: false,
+                videoUrl: 'https://www.youtube.com/watch?v=sI9f-hK4v9M'
+            },
+            'Kabelzug Core': {
+                icon: '🔄',
+                focus: 'Core-Stabilität (Anti-Rotation/Anti-Flexion)',
+                description: 'Dies ist eine Variante der Pallof Press oder eine Anti-Flexions-Übung. Führe kontrollierte Bewegungen gegen den Widerstand des Kabels aus, ohne dass dein Rumpf nachgibt.',
+                imageTag: '[Bild von Kabelzug Core Rotation]',
+                isPreventive: true,
+                videoUrl: 'https://www.youtube.com/watch?v=kP_u2510_8E' // Using Pallof Press as example
+            },
+            'Split Squats': {
+                icon: '🚶',
+                focus: 'Einbein-Stärke, Gesäß, Balance',
+                description: 'Ein Ausfallschritt, bei dem der hintere Fuß stabil bleibt. Senke die Hüfte, bis das hintere Knie fast den Boden berührt. Achte darauf, dass das vordere Knie nicht nach innen kippt.',
+                imageTag: '[Bild von Split Squat]',
+                isPreventive: false,
+                videoUrl: 'https://www.youtube.com/watch?v=5V920h795H4'
+            },
+            'Anti-Rotation': {
+                icon: '🚫',
+                focus: 'Core-Stabilität (Anti-Rotation)',
+                description: 'Dieser Begriff steht für Übungen wie die Pallof Press. Das Ziel ist, dass der Rumpf jegliche Rotation aktiv verhindert. Halte den Bauch fest und bewege nur die Extremitäten gegen den Widerstand.',
+                imageTag: '[Bild von Anti-Rotations-Übung Core]',
+                isPreventive: true,
+                videoUrl: 'https://www.youtube.com/watch?v=kP_u2510_8E' // Using Pallof Press as example
+            },
+            'Plank Walkouts': {
+                icon: '🐾',
+                focus: 'Core-Stabilität (Anti-Extension), Schultern',
+                description: 'Beginne im Stehen. Gehe mit den Händen nach vorne, bis du in einer Plank-Position bist, und laufe dann langsam mit den Händen so weit wie möglich nach vorne, ohne im unteren Rücken durchzuhängen. Gehe zurück.',
+                imageTag: '[Bild von Plank Walkouts]',
+                isPreventive: true,
+                videoUrl: 'https://www.youtube.com/watch?v=zR3tG34c1w0'
+            },
+            'Bulgarian Split Squats': {
+                icon: '🇧🇬',
+                focus: 'Einbein-Stärke, Gesäß, Oberschenkel',
+                description: 'Stelle den hinteren Fuß erhöht auf einer Bank ab. Senke die Hüfte tief ab. Diese Übung ist sehr fordernd für Balance und Kraft. Beginne unbedingt nur mit deinem Körpergewicht (KG!).',
+                imageTag: '[Bild von Bulgarian Split Squat]',
+                isPreventive: false,
+                videoUrl: 'https://www.youtube.com/watch?v=S21cR7i278c'
+            },
+            'Glute Bridge': {
+                icon: '🌉',
+                focus: 'Gesäß, hinterer Oberschenkel',
+                description: 'Lege dich auf den Rücken, Knie angewinkelt. Hebe die Hüfte vom Boden ab, bis Schultern, Hüfte und Knie eine Linie bilden. Drücke das Gesäß fest zusammen. Eine sanfte, aber effektive Übung.',
+                imageTag: '[Bild von Glute Bridge]',
+                isPreventive: true,
+                videoUrl: 'https://www.youtube.com/watch?v=W0-h30PqS2Q'
+            }
+        };
+
+        let currentWeekId = 1;
+
+        // --- CORE INTERACTION HANDLING ---
+
+        function init() {
+            renderTimeline();
+            renderWeekDetail(currentWeekId);
+            initCharts();
+        }
+
+        function scrollToSection(id) {
+            // Sicherstellen, dass das Element existiert, bevor scrollIntoView aufgerufen wird.
+            const element = document.getElementById(id);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                console.error(`Element mit ID "${id}" nicht gefunden.`);
+            }
+        }
+
+        // --- TIMELINE LOGIC ---
+        function renderTimeline() {
+            const container = document.querySelector('.timeline-scroll');
+            container.innerHTML = '';
+
+            weeksData.forEach(week => {
+                const btn = document.createElement('button');
+                const isSelected = week.id === currentWeekId;
+                
+                // Styling based on state
+                let baseClasses = "flex-shrink-0 w-16 h-20 rounded-lg flex flex-col items-center justify-center transition-all duration-200 border-2 snap-start ";
+                if (isSelected) {
+                    baseClasses += "bg-teal-600 border-teal-600 text-white shadow-lg scale-105";
+                } else if ([6, 11].includes(week.id)) { // Deload weeks
+                    baseClasses += "bg-green-50 border-green-200 text-green-700 hover:border-teal-400";
+                } else if (week.id === 12) { // Peak
+                    baseClasses += "bg-purple-50 border-purple-200 text-purple-700 hover:border-teal-400";
+                } else if (week.id === 16) { // Race
+                    baseClasses += "bg-yellow-50 border-yellow-200 text-yellow-700 hover:border-teal-400";
+                } else {
+                    baseClasses += "bg-white border-stone-200 text-stone-600 hover:border-teal-400";
+                }
+
+                btn.className = baseClasses;
+                btn.innerHTML = `
+                    <span class="text-xs uppercase font-bold mb-1">W${week.id}</span>
+                    <span class="text-xs font-semibold">${week.id === 16 ? '🏁' : week.dist + 'k'}</span>
+                `;
+                btn.onclick = () => {
+                    currentWeekId = week.id;
+                    renderTimeline(); // Re-render to update active state
+                    renderWeekDetail(week.id);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // --- WEEK DETAIL LOGIC ---
+        function renderWeekDetail(id) {
+            const week = weeksData.find(w => w.id === id);
+            const container = document.getElementById('week-detail-container');
+            
+            // Animation reset
+            container.style.opacity = '0';
+            
+            setTimeout(() => {
+                let headerColor = "bg-stone-800";
+                let badgeText = week.phase;
+                
+                if(week.id === 6 || week.id === 11) { badgeText = "Entlastung"; headerColor = "bg-green-600"; }
+                if(week.id === 12) { badgeText = "PEAK WEEK"; headerColor = "bg-purple-600"; }
+                if(week.id >= 13 && week.id <= 15) { badgeText = "Tapering"; headerColor = "bg-indigo-500"; }
+                if(week.id === 16) { badgeText = "RACE WEEK"; headerColor = "bg-yellow-500 text-stone-900"; }
+
+                const isRaceWeek = week.id === 16;
+                const studioContentHtml = formatStudioContent(week.studio);
+
+                let html = `
+                    <div class="${headerColor} p-6 text-white flex justify-between items-center">
+                        <div>
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-3xl font-bold">Woche ${week.id}</h3>
+                                <span class="px-3 py-1 bg-white/20 rounded-full text-xs font-bold uppercase tracking-wide backdrop-blur-sm">${badgeText}</span>
+                            </div>
+                            <p class="mt-2 text-white/90 text-sm max-w-xl">${week.note}</p>
+                        </div>
+                        <div class="hidden md:block text-right">
+                            <div class="text-xs uppercase opacity-75">Wochen-Highlight</div>
+                            <div class="text-2xl font-bold">${isRaceWeek ? '21.1 km' : week.ll.split('@')[0]}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Sunday: Long Run -->
+                        <div class="p-4 rounded-lg bg-stone-50 border border-stone-200 hover:border-teal-300 transition-colors group">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="text-xl group-hover:scale-110 transition-transform">🐌</span>
+                                <h4 class="font-bold text-stone-800">Sonntag (LL)</h4>
+                            </div>
+                            <div class="text-sm font-semibold text-teal-700 mb-1">Langer Dauerlauf</div>
+                            <p class="text-sm text-stone-600">${week.ll}</p>
+                        </div>
+
+                        <!-- Studio Session -->
+                        <div class="p-4 rounded-lg bg-stone-50 border border-stone-200 hover:border-teal-300 transition-colors group lg:col-span-2">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="text-xl group-hover:scale-110 transition-transform">🏋️‍♀️</span>
+                                <h4 class="font-bold text-stone-800">Studio: Lauf & Kraft</h4>
+                            </div>
+                            ${studioContentHtml}
+                            ${week.id <= 12 && week.studio.includes('Kraft:') ? '<p class="mt-4 text-xs text-orange-600 font-medium border-t border-orange-100 pt-2">⚠ Knie-Prävention: Die Glute-Übungen sind Pflicht und können als Warm-up dienen!</p>' : ''}
+                        </div>
+
+                        <!-- Easy Run & Yoga -->
+                        <div class="p-4 rounded-lg bg-stone-50 border border-stone-200 hover:border-teal-300 transition-colors group">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="text-xl group-hover:scale-110 transition-transform">🧘‍♀️</span>
+                                <h4 class="font-bold text-stone-800">Do/Fr</h4>
+                            </div>
+                            <div class="text-sm font-semibold text-teal-700 mb-1">Lauf + Yoga</div>
+                            <p class="text-sm text-stone-600">${week.runYoga}</p>
+                        </div>
+
+                        <!-- Optional / Passion -->
+                        <div class="p-4 rounded-lg bg-stone-50 border border-stone-200 hover:border-teal-300 transition-colors group">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="text-xl group-hover:scale-110 transition-transform">${week.opt.includes('BOULDERN') ? '🧗‍♀️' : week.opt.includes('Handstand') ? '🤸' : '🏠'}</span>
+                                <h4 class="font-bold text-stone-800">4. Einheit (Opt.)</h4>
+                            </div>
+                            <div class="text-sm font-semibold text-teal-700 mb-1">${week.opt.includes('BOULDERN') ? 'Bouldern' : 'Home / Flexibel'}</div>
+                            <p class="text-sm text-stone-600">${week.opt}</p>
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML = html;
+                container.style.opacity = '1';
+
+                // Render the new exercise guide for the current week
+                renderExerciseGuide(week);
+            }, 200);
+        }
+
+        // Helper function to format Studio Content
+        function formatStudioContent(content) {
+            const parts = content.split('Kraft:');
+            const running = parts[0].trim().replace(/\.$/, ''); // Remove trailing dot
+            
+            // Running component
+            let html = `<p class="text-xs uppercase font-semibold text-stone-500">Lauf-Komponente (IV / TDL):</p>
+                        <p class="text-sm text-stone-700 mb-4">${running}</p>`;
+            
+            // Strength component
+            if (parts.length > 1 && parts[1].trim()) {
+                const strengthItems = parts[1].trim().split(',').map(item => item.trim());
+                
+                html += `<p class="text-xs uppercase font-semibold text-stone-500 mt-3">Kraftübungen:</p>
+                        <ul class="text-sm text-stone-700 space-y-1">`;
+                
+                strengthItems.forEach(item => {
+                    if (item) {
+                        const text = item.replace(/\.$/, '');
+                        const display = text.includes('Clamshells') || text.includes('Lateral Band Walks') || text.includes('Pallof Press') || text.includes('Planke') || text.includes('Side Plank') || text.includes('Core') || text.includes('Glute Bridge') || text.includes('Kabelzug-Hip-Hinge') ? 
+                                        `<span class="text-teal-600 font-semibold">${text}</span>` : text;
+                        html += `<li class="flex items-start">
+                                    <span class="mr-2 text-stone-400">•</span>
+                                    <span>${display}</span>
+                                 </li>`;
+                    }
+                });
+                
+                html += `</ul>`;
+            } else if (content.includes('Mini-Einheit') || content.includes('DO: Mini-Lauf')) {
+                // Handle Taper/Race weeks which might only have running/mini-runs
+                html = `<p class="text-sm text-stone-700">${content}</p>`;
+            }
+            
+            return html;
+        }
+        
+        // --- NEW: EXERCISE GUIDE LOGIC ---
+        
+        function getExercisesForWeek(week) {
+            const exerciseList = [];
+            const studioPart = week.studio.split('Kraft:');
+            
+            if (studioPart.length > 1) {
+                // Extract all exercise names, ignoring sets/reps (e.g., '3x12')
+                const rawExercises = studioPart[1].trim().replace(/\.$/, '').split(',');
+                
+                rawExercises.forEach(item => {
+                    // Clean up string to just get the exercise name (e.g., "Goblet Squat 3x12" -> "Goblet Squat")
+                    let name = item.trim().split(' ')[0];
+                    let key = Object.keys(exerciseDetails).find(k => item.trim().includes(k));
+
+                    // Special handling for compound names
+                    if (!key) {
+                        if (item.trim().includes('Kabelzug-Hip-Hinge')) {
+                            key = 'Kabelzug-Hip-Hinge';
+                        } else if (item.trim().includes('Glute Bridge')) {
+                            key = 'Glute Bridge';
+                        } else if (item.trim().includes('Kabelzug Core')) {
+                            key = 'Kabelzug Core';
+                        }
+                    }
+
+                    if (key && !exerciseList.some(e => e.name === key)) {
+                        exerciseList.push({
+                            name: key,
+                            ...exerciseDetails[key]
+                        });
+                    }
+                });
+            }
+            return exerciseList;
+        }
+
+        function renderExerciseGuide(week) {
+            const guideContainer = document.getElementById('exercise-guide-cards');
+            const weekNumberSpan = document.getElementById('guide-week-number');
+            
+            weekNumberSpan.textContent = week.id;
+
+            const exercises = getExercisesForWeek(week);
+            
+            if (exercises.length === 0) {
+                guideContainer.innerHTML = `
+                    <div class="md:col-span-2 p-6 bg-yellow-50 text-yellow-800 rounded-xl border border-yellow-200">
+                        <p class="font-semibold">Keine detaillierten Kraftübungen in dieser Woche.</p>
+                        <p class="text-sm mt-1">Während der Entlastungs- und Tapering-Phasen (ab Woche 13) ist der Fokus auf Ruhe und minimale Erhaltung.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            exercises.forEach(ex => {
+                const color = ex.isPreventive ? 'border-teal-400 bg-teal-50' : 'border-stone-300 bg-white';
+                const shadow = ex.isPreventive ? 'shadow-md shadow-teal-100' : 'shadow-sm';
+
+                html += `
+                    <div class="p-5 rounded-xl border-2 ${color} ${shadow}">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 class="text-xl font-bold text-stone-800">${ex.icon} ${ex.name}</h4>
+                                <span class="text-xs font-medium ${ex.isPreventive ? 'text-teal-700' : 'text-stone-500'}">${ex.focus}</span>
+                            </div>
+                            ${ex.isPreventive ? '<span class="text-xs px-2 py-1 bg-teal-200 text-teal-800 rounded-full font-bold">PRÄVENTION</span>' : ''}
+                        </div>
+                        <p class="text-sm text-stone-700 mb-4">${ex.description}</p>
+                        
+                        <!-- Video Link -->
+                        <div class="w-full text-center">
+                            <a href="${ex.videoUrl}" target="_blank" class="text-sm font-semibold text-teal-600 hover:text-teal-800 transition flex items-center justify-center gap-1 bg-gray-100 p-2 rounded-lg mt-3 border border-gray-200 hover:bg-gray-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                                    <path fill-rule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.348 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 20.322c-1.25.705-2.779-.217-2.779-1.643V5.653Z" clip-rule="evenodd" />
+                                </svg>
+                                Video-Anleitung ansehen
+                            </a>
+                        </div>
+                    </div>
+                `;
+            });
+
+            guideContainer.innerHTML = html;
+        }
+
+
+        // --- CHARTS LOGIC ---
+        function initCharts() {
+            // 1. Long Run Progression Line Chart
+            const ctxLongRun = document.getElementById('longRunChart').getContext('2d');
+            
+            // Extract distances (parse "10 km..." to 10)
+            const labels = weeksData.map(w => `W${w.id}`);
+            const dataPoints = weeksData.map(w => w.id === 16 ? 21.1 : parseFloat(w.dist));
+
+            new Chart(ctxLongRun, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Distanz (km)',
+                        data: dataPoints,
+                        borderColor: '#0D9488', // teal-600
+                        backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: weeksData.map(w => w.id === 12 ? '#9333EA' : '#0D9488'), // Purple for Peak
+                        pointRadius: weeksData.map(w => w.id === 12 ? 6 : 4)
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.raw + ' km - ' + (context.dataIndex === 11 ? 'Peak Week' : context.dataIndex === 15 ? 'Race' : 'Aufbau');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#E7E5E4' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // 2. Pace Zones Bar Chart
+            const ctxPace = document.getElementById('paceChart').getContext('2d');
+            new Chart(ctxPace, {
+                type: 'bar',
+                data: {
+                    labels: ['Langer Lauf (LL)', 'Halbmarathon (Ziel)', 'Intervalle (IV)'],
+                    datasets: [{
+                        label: 'Pace (min/km)',
+                        data: [7.25, 6.15, 5.5], // Average values used for viz
+                        backgroundColor: [
+                            '#A8A29E', // Stone (Slow)
+                            '#0D9488', // Teal (Goal)
+                            '#F97316'  // Orange (Fast)
+                        ],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y', // Horizontal Bar Chart
+                    scales: {
+                        x: {
+                            min: 5,
+                            max: 8,
+                            title: { display: true, text: 'min/km (Langsamer ->)' },
+                            grid: { color: '#E7E5E4' }
+                        },
+                        y: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if(context.dataIndex === 0) return '7:00–7:30 (Plaudertempo!)';
+                                    if(context.dataIndex === 1) return '6:05–6:15 (Wettkampf)';
+                                    if(context.dataIndex === 2) return '5:30–5:45 (VO2max)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Init App
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
